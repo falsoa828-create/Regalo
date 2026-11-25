@@ -1,0 +1,377 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dune: Parte Tre - Biglietto Regalo</title>
+    <!-- Tailwind CSS per layout e utilità responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- QRCode.js per generare il codice QR dinamicamente -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Tone.js per la colonna sonora epica sintetizzata (nessun file esterno richiesto) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Google Fonts: Cinzel per lo stile epico Dune e Inter per i dettagli -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Stili personalizzati per effetti metallici, particelle e animazioni cinematografiche */
+        body {
+            background-color: #050505;
+            color: #f3e5ab;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .font-dune {
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.25em;
+        }
+
+        /* Effetto involto argentato metallizzato */
+        .silver-foil {
+            background: linear-gradient(
+                135deg,
+                #8e9eab 0%,
+                #eef2f3 20%,
+                #7b868e 40%,
+                #ffffff 50%,
+                #68737a 70%,
+                #d7dde8 85%,
+                #5c666d 100%
+            );
+            background-size: 200% 200%;
+            animation: foilShimmer 6s ease infinite;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.95),
+                inset 0 0 30px rgba(255, 255, 255, 0.4),
+                inset 0 0 10px rgba(0, 0, 0, 0.6);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Texture pieghe carta stagnola / metallizzata */
+        .silver-foil::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 40%),
+                              radial-gradient(circle at 80% 70%, rgba(0,0,0,0.3) 0%, transparent 50%),
+                              repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 2px, transparent 2px, transparent 8px);
+            pointer-events: none;
+        }
+
+        @keyframes foilShimmer {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Animazione di vibrazione quando si scuote */
+        .shake-anim {
+            animation: shakeHard 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shakeHard {
+            10%, 90% { transform: translate3d(-4px, 0, 0) rotate(-1deg); }
+            20%, 80% { transform: translate3d(6px, 0, 0) rotate(2deg); }
+            30%, 50%, 70% { transform: translate3d(-8px, 0, 0) rotate(-2deg); }
+            40%, 60% { transform: translate3d(8px, 0, 0) rotate(1deg); }
+        }
+
+        /* Animazione apertura involucro (sinistra e destra si separano) */
+        .foil-half-left {
+            transition: transform 1.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 1.2s ease;
+        }
+        .foil-half-right {
+            transition: transform 1.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 1.2s ease;
+        }
+
+        .unwrapped .foil-half-left {
+            transform: translateX(-130%) rotate(-18deg) scale(0.9);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .unwrapped .foil-half-right {
+            transform: translateX(130%) rotate(18deg) scale(0.9);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Bagliore Spezia (Melange) blu elettrico e oro deserto */
+        .spice-glow {
+            box-shadow: 
+                0 0 25px rgba(245, 158, 11, 0.55),
+                0 0 60px rgba(217, 119, 6, 0.35),
+                0 0 90px rgba(56, 189, 248, 0.2),
+                inset 0 0 18px rgba(251, 191, 36, 0.35);
+            animation: borderPulseGlow 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes borderPulseGlow {
+            0% {
+                border-color: rgba(251, 191, 36, 0.85);
+                box-shadow: 
+                    0 0 22px rgba(245, 158, 11, 0.5),
+                    0 0 55px rgba(217, 119, 6, 0.3),
+                    inset 0 0 15px rgba(251, 191, 36, 0.25);
+            }
+            100% {
+                border-color: rgba(253, 230, 138, 1);
+                box-shadow: 
+                    0 0 34px rgba(251, 191, 36, 0.85),
+                    0 0 75px rgba(56, 189, 248, 0.35),
+                    inset 0 0 24px rgba(253, 224, 71, 0.45);
+            }
+        }
+
+        /* Effetto 3D e riflesso lucido al tocco sul biglietto */
+        #package-stage {
+            perspective: 1100px;
+        }
+
+        #revealed-ticket {
+            transform-style: preserve-3d;
+            will-change: transform;
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #ticket-glare {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 30;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            background: radial-gradient(
+                circle at 50% 50%,
+                rgba(255, 252, 230, 0.5) 0%,
+                rgba(251, 191, 36, 0.22) 32%,
+                rgba(56, 189, 248, 0.1) 58%,
+                transparent 78%
+            );
+            mix-blend-mode: screen;
+        }
+
+        .eyes-of-ibad {
+            text-shadow: 0 0 12px rgba(56, 189, 248, 0.9), 0 0 24px rgba(14, 165, 233, 0.6);
+        }
+
+        /* Bordo traforato stile biglietto cinema */
+        .ticket-perforation {
+            border-top: 2px dashed rgba(217, 119, 6, 0.4);
+            position: relative;
+        }
+        .ticket-perforation::before, .ticket-perforation::after {
+            content: '';
+            position: absolute;
+            top: -12px;
+            width: 22px;
+            height: 22px;
+            background-color: #050505;
+            border-radius: 50%;
+        }
+        .ticket-perforation::before { left: -28px; }
+        .ticket-perforation::after { right: -28px; }
+
+        /* Particelle di sabbia/spezia fluttuanti */
+        #spice-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between relative selection:bg-amber-600 selection:text-black">
+
+    <!-- Canvas per polvere di Spezia (Melange) dorata e blu -->
+    <canvas id="spice-canvas"></canvas>
+
+    <!-- Barra superiore discreta per passare tra Modalità Regalo e Modalità QR Code -->
+    <header class="w-full z-30 p-4 flex justify-between items-center max-w-2xl mx-auto">
+        <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-zinc-400 animate-pulse shadow-[0_0_10px_#a1a1aa]" id="status-dot"></span>
+            <span id="header-badge-text" class="text-xs uppercase tracking-widest text-zinc-400 font-semibold">Regalo Riservato</span>
+        </div>
+        
+        <div class="flex items-center space-x-2">
+            <!-- Pulsante Audio Mute/Unmute -->
+            <button id="audio-toggle-btn" class="hidden px-3 py-1.5 rounded-full bg-zinc-900/90 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-1.5 hover:bg-zinc-800 transition">
+                <span id="audio-icon">🔊</span>
+                <span id="audio-label">Audio ON</span>
+            </button>
+
+            <!-- Pulsante per mostrare/nascondere il QR Code da far scansionare -->
+            <button id="toggle-qr-btn" class="px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-zinc-700 text-zinc-300 text-xs hover:border-amber-500/50 hover:text-amber-300 transition shadow-lg">
+                Mostra QR Regalo
+            </button>
+        </div>
+    </header>
+
+    <!-- ===================================================================== -->
+    <!-- SEZIONE 1: SCHERMATA QR CODE (Da mostrare al festeggiato/destinatario) -->
+    <!-- ===================================================================== -->
+    <main id="qr-screen" class="hidden z-20 flex-1 flex flex-col items-center justify-center px-6 py-8 text-center max-w-md w-full">
+        <div class="bg-zinc-950/90 border border-zinc-700/60 rounded-3xl p-8 shadow-2xl backdrop-blur-md w-full">
+            <p class="text-xs uppercase tracking-[0.3em] text-zinc-400 mb-2">Sorpresa Digitale</p>
+            <h1 class="font-dune text-2xl sm:text-3xl font-bold text-zinc-100 mb-6">UN DONO PER TE</h1>
+            
+            <!-- Contenitore QR Code -->
+            <div class="bg-white p-4 rounded-2xl inline-block shadow-[0_0_30px_rgba(245,158,11,0.25)] mb-6">
+                <div id="qrcode"></div>
+            </div>
+
+            <p class="text-sm text-zinc-300 leading-relaxed mb-4">
+                Inquadra il codice QR con la fotocamera del tuo telefono per ricevere il tuo pacchetto sigillato.
+            </p>
+            
+            <div id="local-file-warning" class="hidden text-xs text-amber-400/90 bg-amber-950/40 border border-amber-500/30 rounded-xl p-3 mb-4 text-left">
+                <strong>Nota tecnica:</strong> Stai aprendo il file in locale. Per far funzionare il QR code su un altro telefono, carica questa pagina online (es. GitHub Pages, Netlify o Tiiny.host) oppure inserisci qui il link pubblico:
+                <input type="text" id="custom-url-input" placeholder="https://tuolink.it/sorpresa" class="mt-2 w-full bg-black/70 border border-amber-500/40 rounded-lg px-2.5 py-1.5 text-white text-xs focus:outline-none focus:border-amber-400">
+            </div>
+
+            <button id="preview-experience-btn" class="w-full py-3 rounded-xl bg-gradient-to-r from-zinc-200 to-zinc-400 text-black font-bold text-sm tracking-wider uppercase hover:from-white hover:to-zinc-300 transition shadow-lg">
+                Simula Esperienza Biglietto &rarr;
+            </button>
+        </div>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- SEZIONE 2: ESPERIENZA PRINCIPALE (Sfondo Nero + Pacchetto Argentato)  -->
+    <!-- ===================================================================== -->
+    <main id="gift-screen" class="z-20 flex-1 flex flex-col items-center justify-center px-4 py-6 w-full max-w-lg relative">
+        
+        <!-- Contenitore principale del pacchetto / biglietto -->
+        <div id="package-stage" class="relative w-full max-w-sm aspect-[3/4.3] flex items-center justify-center">
+            
+            <!-- 1. IL BIGLIETTO RIVELATO (Sotto l'involucro argentato) -->
+            <div id="revealed-ticket" class="w-full h-full bg-gradient-to-b from-zinc-950 via-stone-950 to-black border-2 border-amber-400 rounded-3xl p-5 flex flex-col justify-between spice-glow opacity-0 scale-95 transition-all duration-1000">
+                
+                <!-- Riflesso lucido dinamico che segue il tocco -->
+                <div id="ticket-glare"></div>
+
+                <!-- Intestazione Biglietto -->
+                <div>
+                    <div class="flex justify-between items-center border-b border-amber-500/20 pb-3 mb-3">
+                        <span class="text-[10px] uppercase tracking-[0.25em] text-amber-400 font-semibold">Biglietto Ufficiale</span>
+                        <span class="text-[10px] uppercase tracking-widest text-sky-400 eyes-of-ibad font-bold">★ IMAX / CINEMA</span>
+                    </div>
+
+                    <!-- Artwork Cinematografico Dune: Parte Tre (SVG integrato ad alta risoluzione) -->
+                    <div class="relative w-full h-44 sm:h-48 rounded-2xl overflow-hidden border border-amber-500/30 mb-4 bg-black">
+                        <svg viewBox="0 0 600 340" class="w-full h-full object-cover" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <radialGradient id="arrakisSun" cx="50%" cy="38%" r="55%">
+                                    <stop offset="0%" stop-color="#fde68a"/>
+                                    <stop offset="30%" stop-color="#f59e0b"/>
+                                    <stop offset="65%" stop-color="#9a3412"/>
+                                    <stop offset="100%" stop-color="#090504"/>
+                                </radialGradient>
+                                <linearGradient id="duneBack" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="#78350f"/>
+                                    <stop offset="100%" stop-color="#1c0a00"/>
+                                </linearGradient>
+                                <linearGradient id="duneFront" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#b45309"/>
+                                    <stop offset="50%" stop-color="#451a03"/>
+                                    <stop offset="100%" stop-color="#050302"/>
+                                </linearGradient>
+                                <filter id="glowBlue" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur"/>
+                                        <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                </filter>
+                            </defs>
+
+                            <!-- Cielo e Grande Sole di Arrakis -->
+                            <rect width="600" height="340" fill="url(#arrakisSun)"/>
+                            <circle cx="300" cy="125" r="78" fill="#fef3c7" opacity="0.85"/>
+                            <circle cx="300" cy="125" r="95" fill="#f59e0b" opacity="0.25"/>
+
+                            <!-- Sagoma Verme delle Sabbie (Shai-Hulud) sullo sfondo -->
+                            <path d="M 430 220 Q 455 115 510 135 Q 545 150 530 230 Z" fill="#1f0d05" opacity="0.85"/>
+                            <ellipse cx="498" cy="148" rx="18" ry="26" transform="rotate(-25 498 148)" fill="#090402" stroke="#78350f" stroke-width="2"/>
+
+                            <!-- Dune Posteriori -->
+                            <path d="M 0 215 Q 160 165 340 210 T 600 190 L 600 340 L 0 340 Z" fill="url(#duneBack)"/>
+
+                            <!-- Dune Anteriori -->
+                            <path d="M 0 250 Q 220 205 420 255 T 600 240 L 600 340 L 0 340 Z" fill="url(#duneFront)"/>
+
+                            <!-- Figura Incappucciata del Muad'Dib sul crinale -->
+                            <path d="M 278 242 L 288 182 Q 300 168 312 182 L 324 242 Z" fill="#090707"/>
+                            <!-- Mantello al vento -->
+                            <path d="M 288 188 Q 255 202 238 228 Q 268 225 284 218 Z" fill="#0c0a09"/>
+                            <!-- Occhi Blu di Ibad -->
+                            <circle cx="296" cy="184" r="2.2" fill="#38bdf8" filter="url(#glowBlue)"/>
+                            <circle cx="304" cy="184" r="2.2" fill="#38bdf8" filter="url(#glowBlue)"/>
+
+                            <!-- Titolo DUNE: PARTE TRE sovraimpresso -->
+                            <text x="300" y="294" text-anchor="middle" fill="#fef3c7" font-family="Cinzel, serif" font-weight="900" font-size="34" letter-spacing="14">DUNE</text>
+                            <text x="300" y="318" text-anchor="middle" fill="#fbbf24" font-family="Cinzel, serif" font-weight="600" font-size="13" letter-spacing="8">PARTE TRE</text>
+                        </svg>
+                        
+                        <!-- Badge Messia di Dune -->
+                        <div class="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-sm border border-amber-500/40 px-2.5 py-0.5 rounded-full">
+                            <span class="text-[9px] uppercase tracking-widest text-amber-300">Messia di Dune</span>
+                        </div>
+                    </div>
+
+                    <!-- La Frase Richiesta dall'Utente -->
+                    <blockquote class="text-center px-1 my-2">
+                        <p class="font-dune text-sm sm:text-base font-semibold text-amber-100 leading-relaxed tracking-wide">
+                            “Il Muad'Dib ci aspetta. Preparati per vedere il terzo capitolo della saga con il tuo biglietto in regalo”
+                        </p>
+                    </blockquote>
+                </div>
+
+                <!-- Sezione inferiore traforata del biglietto -->
+                <div class="ticket-perforation pt-3 mt-2">
+                    <div class="flex justify-between items-end text-xs">
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wider text-zinc-500">Destinazione</p>
+                            <p class="font-semibold text-amber-300">ARRAKIS • SALA CINEMA</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] uppercase tracking-wider text-zinc-500">Capitolo</p>
+                            <p class="font-bold text-amber-200/80">DUNE: PARTE TRE</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. L'INVOLUCRO ARGENTATO (Sopra il biglietto, si apre scuotendo) -->
+            <div id="silver-wrapper" class="absolute inset-0 z-10 flex cursor-pointer">
+                <!-- Metà sinistra dell'involucro argentato -->
+                <div class="foil-half-left w-1/2 h-full silver-foil rounded-l-3xl border-r border-zinc-400/50 flex items-center justify-end pr-1">
+                    <div class="h-4/5 w-[1px] bg-gradient-to-b from-transparent via-white/70 to-transparent"></div>
+                </div>
+                
+                <!-- Metà destra dell'involucro argentato -->
+                <div class="foil-half-right w-1/2 h-full silver-foil rounded-r-3xl border-l border-zinc-600/40 flex items-center justify-start pl-1">
+                    <div class="h-4/5 w-[1px] bg-gradient-to-b from-transparent via-black/30 to-transparent"></div>
+                </div>
+
+                <!-- Sigillo centrale e istruzioni sopra la confezione argentata -->
+                <div id="wrapper-seal" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center pointer-events-none transition-opacity duration-500">
+                    <!-- Emblema circolare metallico -->
+                    <div class="w-24 h-24 rounded-full bg-zinc-900/90 border-2 border-zinc-300/80 shadow-[0_0_25px_rgba(255,255,255,0.4)] flex flex-col items-center justify-center mb-5 backdrop-blur-sm">
+                        <!-- Icona telefono che vibra -->
+                        <svg class="w-9 h-9 text-zinc-100 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+
+                    <div class="bg-black/80 backdrop-blur-md border border-white/20 px-5 py-3.5 rounded-2xl shadow-2xl max-w-[260px]">
+                        <
